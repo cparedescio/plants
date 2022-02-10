@@ -180,51 +180,30 @@ def analyzeImage(imageArray2,strImage):
             if (pixel == True):
                 area = area + 1
                 rgb = imageArray3[i,j]
-                index = getColorNN2(rgb)
+                index = getColor(rgb,1)
                 colorCount[index] = colorCount[index] + 1
 
-    colorCount = colorCount * (1/area)
-    end = time.time()
-    #print(end-start)
 
+
+    colorCount = colorCount * (1/area)
+
+    '''
+    finish1 = time.time()
+    plt.figure()
+    plt.subplot(121)
+    plt.title("P.B:  " + str(round(colorCount[0],2))
+    + " - Necrosis: " + str(round(colorCount[1],2)) + "  - Clorosis: "
+    + str(round(colorCount[3],2)) + " - Sano: " + str(round(colorCount[2],2)) )
+    plt.imshow(imageArray3)
+    plt.subplot(122)
+    plt.title(" tiempo: segundos " + str(round(finish1-start1,4)) + " s")
+    plt.imshow(imageArray2)
+    plt.show()
+
+    '''
     return(colorCount)
 
 
-def getColorNN2(rgb):
-
-    color = 0
-
-    r = rgb[0]/255
-    g = rgb[1]/255
-    b = rgb[2]/255
-
-    h,s,v = colorsys.rgb_to_hsv(r,g,b)
-
-    o11 = 1/(1 + math.exp(-1*(-3.1580227 - 2.1237742*h + 0.7001064*s + 2.8366065*v)))
-    o12 = 1/(1 + math.exp(-1*(-52.0145977 + 234.8668015*h + 0.6990048*s + 30.0214358*v)))
-    o13 = 1/(1 + math.exp(-1*(-1.253056 + 13.992049*h + 43.986046*s - 18.551682*v)))
-    o14 = 1/(1 + math.exp(-1*(-4.905778 + 59.807990*h - 4.249384*s - 10.403728*v)))
-    o21 = 1/(1 + math.exp(-1*(0.6325434 - 1.2561720*o11 - 3.0853635*o12 + 2.9881184*o13 - 79.1063440*o14)))
-    o22 = 1/(1 + math.exp(-1*(-0.3035949 - 0.3958577*o11 + 0.7328440*o12 - 5.9774242*o13 - 1.4438876*o14)))
-    o23 = 1/(1 + math.exp(-1*(-19.876105 + 358.356456*o11 + 8.919032*o12 - 4.203202*o13 - 3.558226*o14)))
-
-    output = round(1.003647 + 2.079147*o21 - 8.061846*o22 + 1.005889*o23,0)
-
-
-    if (output <= 0):
-        color = 0
-    elif(output == 1):
-        color = 1
-    elif(output == 2):
-        color = 3
-    elif(output == 3):
-        color = 2
-    elif(output == 4):
-        color = 1
-    else:
-        color = 4
-
-    return (color)
 
 
 def codifyImage(binaryImage,background,rows,cols):
@@ -273,7 +252,7 @@ Esta parte contiene los codigos de saliency
 
 
 def maps(strimage):
-    start = time.time()
+
     array1 = np.array(Image.open(strimage))
     rows = array1.shape[0]
     cols = array1.shape[1]
@@ -291,7 +270,7 @@ def maps(strimage):
             oi = i - shiftRows
             oj = j - shiftCols
             if (oi >= 0 and oi <= rows -1 and oj >= 0 and oj <= cols-1):
-                pixel = getColorNN2a(array1[oi, oj])
+                pixel = getColor(array1[oi, oj],2)
                 array2[oi,oj] = pixel
                 if pixel == 1:
                     pt = pt + 1
@@ -371,9 +350,9 @@ def maps(strimage):
     binary = sm > tre
     opening = morphology.opening(binary)
     #Para los casos en los que se tiene una hoja o planta sin espacios enete si.
-    closing = morphology.closing(opening,morphology.square(int(0.04*max(rows,cols))))
+    #closing = morphology.closing(opening,morphology.square(int(0.04*max(rows,cols))))
     #Para los casos en los que se tiene una planta con espacios y no una hoja.
-    #closing = morphology.closing(opening)
+    closing = morphology.closing(opening)
 
     area = 0
     colorCount =  np.zeros(5)
@@ -382,14 +361,13 @@ def maps(strimage):
             if (closing[i,j] == True):
                 area = area + 1
                 rgb= array1[i,j]
-                color = getColorNNa(rgb)
+                color = getColor(rgb,1)
                 colorCount[color] = colorCount[color] + 1
 
     colorCount = colorCount * (1/area)
 
-    finish = time.time()
 
-    '''
+    finish2 = time.time()
     plt.figure()
     plt.subplot(121)
     plt.title("P.B:  " + str(round(colorCount[0],2))
@@ -397,108 +375,69 @@ def maps(strimage):
     + str(round(colorCount[3],2)) + " - Sano: " + str(round(colorCount[2],2)) )
     plt.imshow(array1)
     plt.subplot(122)
-    plt.title(" tiempo: "  + str(round(finish - start,3)) + " s")
+    plt.title(" tiempo: segundos " +  str(round(finish2-start1,4))  + " s")
     plt.imshow(closing)
     plt.show()
-    
-    '''
 
 
     return (colorCount)
 
-
-def getColorNN2a(rgb):
+def getColor(rgb,id):
 
     r = rgb[0]/255
     g = rgb[1]/255
     b = rgb[2]/255
 
     h,s,v = colorsys.rgb_to_hsv(r,g,b)
-
-    o11 = 1/(1 + math.exp(-1*(-3.1580227 - 2.1237742*h
-    + 0.7001064*s + 2.8366065*v)))
-    o12 = 1/(1 + math.exp(-1*(-52.0145977 + 234.8668015*h
-    + 0.6990048*s + 30.0214358*v)))
-    o13 = 1/(1 + math.exp(-1*(-1.253056 + 13.992049*h
-    + 43.986046*s - 18.551682*v)))
-    o14 = 1/(1 + math.exp(-1*(-4.905778 + 59.807990*h
-    - 4.249384*s - 10.403728*v)))
-    o21 = 1/(1 + math.exp(-1*(0.6325434 - 1.2561720*o11
-    - 3.0853635*o12 + 2.9881184*o13 - 79.1063440*o14)))
-    o22 = 1/(1 + math.exp(-1*(-0.3035949 - 0.3958577*o11
-    + 0.7328440*o12 - 5.9774242*o13 - 1.4438876*o14)))
-    o23 = 1/(1 + math.exp(-1*(-19.876105 + 358.356456*o11
-    + 8.919032*o12 - 4.203202*o13 - 3.558226*o14)))
-
-    output = (1.003647 + 2.079147*o21 - 8.061846*o22 + 1.005889*o23)
-    #Usualmente se usa  0.15 pero generaba falsos positivos, se observo
-    #que 0.04 genera mejores resultados.
-
-    color = 0
-    if abs(output - round(output,0)) < 0.1:
-        output = round(output,0)
-        if output <= 0:
+    #blanco
+    if ( s <= 0.10 and v >= 0.9):
+        if id == 1:
             color = 0
-        elif output == 1:
-            color = 0
-        elif output == 2:
-            if g > r and g > b:
-                color = 1
-        elif output == 3:
-            color = 1
-        elif output == 4:
-            color = 1
         else:
             color = 0
+    #negro
+    elif(v <= 0.1):
+        if id == 1:
+            color = 4
+        else:
+            color = 0
+    #cafè
+    elif(h <= 45/360 and s > 0.15):
+        if id == 1:
+            color = 1
+        else:
+            color = 1
+    elif(45/360 < h and h <= 55/360 and s > 0.15 and v < 0.5):
+        if id == 1:
+            color = 1
+        else:
+            color = 1
+    #amarillo
+    elif(45/360 < h and h <= 55/360 and s > 0.3 and v >= 0.5):
+        if id == 1:
+            color = 3
+        else:
+            color = 1
+
+    elif(55/360 < h and h <= 65/360 and s > 0.3):
+        if id == 1:
+            color = 3
+        else:
+            color = 1
+    #verde
+    elif(65/360 < h  and h <= 175/360 and s >= 0.15):
+        if id == 1:
+            color = 2
+        else:
+            color = 1
+    #otros
     else:
-        color = 0
+        if id == 1:
+            color = 4
+        else:
+            color = 0
 
     return color
-
-
-
-def getColorNNa(rgb):
-
-    color = 0
-
-    r = rgb[0]/255
-    g = rgb[1]/255
-    b = rgb[2]/255
-
-    h,s,v = colorsys.rgb_to_hsv(r,g,b)
-
-    o11 = 1/(1 + math.exp(-1*(-3.1580227 - 2.1237742*h
-    + 0.7001064*s + 2.8366065*v)))
-    o12 = 1/(1 + math.exp(-1*(-52.0145977 + 234.8668015*h
-    + 0.6990048*s + 30.0214358*v)))
-    o13 = 1/(1 + math.exp(-1*(-1.253056 + 13.992049*h
-    + 43.986046*s - 18.551682*v)))
-    o14 = 1/(1 + math.exp(-1*(-4.905778 + 59.807990*h
-    - 4.249384*s - 10.403728*v)))
-    o21 = 1/(1 + math.exp(-1*(0.6325434 - 1.2561720*o11
-    - 3.0853635*o12 + 2.9881184*o13 - 79.1063440*o14)))
-    o22 = 1/(1 + math.exp(-1*(-0.3035949 - 0.3958577*o11
-    + 0.7328440*o12 - 5.9774242*o13 - 1.4438876*o14)))
-    o23 = 1/(1 + math.exp(-1*(-19.876105 + 358.356456*o11
-    + 8.919032*o12 - 4.203202*o13 - 3.558226*o14)))
-
-    output = round(1.003647 + 2.079147*o21 - 8.061846*o22 + 1.005889*o23,0)
-
-
-    if (output <= 0):
-        color = 0
-    elif(output == 1):
-        color = 1
-    elif(output == 2):
-        color = 2
-    elif(output == 3):
-        color = 3
-    elif(output == 4):
-        color = 1
-    else:
-        color = 4
-
-    return (color)
 
 
 #Parte nueva para evaluar desempeño de la segmentacion
@@ -566,10 +505,13 @@ for subdir, dirs, files in os.walk(cwd, topdown=True):
         if '.jpg' in file or '.JPG' in file:
             imagesString.append(str(file))
 
-f = open("resultados3.txt", "w")
+f = open("cornRustTR.txt", "w")
+
+start = time.time()
 
 for strImage in imagesString:
-    start = time.time()
+
+    start1 = time.time()
     imageArray3 = np.array(Image.open(strImage))
     rows = imageArray3.shape[0]
     cols = imageArray3.shape[1]
@@ -582,7 +524,7 @@ for strImage in imagesString:
     #Para los casos en los que se tiene una planta con espacios y no una hoja.
     #closing = morphology.closing(binaryImage)
     #backGround = getBackGround(closing,True,False)
-    f1= evaluateSegmentation(closing,strImage)
+    f1 = evaluateSegmentation(closing,strImage)
 
 
     if f1 < 0.016:
@@ -601,6 +543,8 @@ for strImage in imagesString:
     '''
 
 
-
 f.close()
 
+
+finish = time.time()
+print(finish-start)
